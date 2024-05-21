@@ -2601,7 +2601,7 @@ class OrderCore extends ObjectModel
 
     // Order is considered as refunded if all bookings are requested for refund and all are with refunded status
     // $refundFlag [ORDER_RETURN_STATE_FLAG_REFUNDED || ORDER_RETURN_STATE_FLAG_DENIED]
-    public function hasCompletelyRefunded($refundFlag = 0)
+    public function hasCompletelyRefunded($refundFlag = 0, $includeCheckIn = 0)
     {
         $objHotelBooking = new HotelBookingdetail();
         if ($refundBookings = OrderReturn::getOrdersReturnDetail($this->id)) {
@@ -2625,6 +2625,17 @@ class OrderCore extends ObjectModel
                             }
                         }
                     }
+                    return true;
+                } elseif ($includeCheckIn) {
+                    foreach ($orderBookings as $booking) {
+                        if ($booking['is_refunded'] == 0
+                            && !OrderReturn::getOrdersReturnDetail($this->id, 0, $booking['id'])
+                            && $booking['id_status'] == HotelBookingDetail::STATUS_ALLOTED
+                        ) {
+                            return false;
+                        }
+                    }
+
                     return true;
                 }
             }

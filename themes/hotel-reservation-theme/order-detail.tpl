@@ -374,12 +374,14 @@
 									{if $refund_allowed}
 										<td class="booking_refund_fields standard_refund_fields">
 											{if isset($rm_v['ids_htl_booking_detail']) && $rm_v['ids_htl_booking_detail']}
-												{foreach $rm_v['ids_htl_booking_detail'] as $key => $id_htl_booking}
+												{assign var=key value=0}
+												{foreach $rm_v['ids_htl_booking_detail'] as $id_htl_booking => $status_checked_in_out}
 													<div class="checkbox">
 														<label for="bookings_to_refund">
-															<input class="bookings_to_refund" type="checkbox" name="bookings_to_refund[]" value="{$id_htl_booking|escape:'html':'UTF-8'}" {if (isset($refundReqBookings) && ($id_htl_booking|in_array:$refundReqBookings)) || $rm_v['is_refunded']}disabled{/if}/> &nbsp;{l s='Room'}-{$key+1}
+															<input class="bookings_to_refund" type="checkbox" name="bookings_to_refund[]" value="{$id_htl_booking|escape:'html':'UTF-8'}" {if (isset($refundReqBookings) && ($id_htl_booking|in_array:$refundReqBookings)) || $rm_v['is_refunded'] || (int)$status_checked_in_out != HotelBookingDetail::STATUS_ALLOTED}disabled{/if}/> &nbsp;{l s='Room'}-{$key+1}
 														</label>
 													</div>
+													{$key = $key + 1}
 												{/foreach}
 											{/if}
 										</td>

@@ -233,6 +233,7 @@ class OrderDetailControllerCore extends FrontController
                                 $objHotelBookingDetail = new HotelBookingDetail($idHtlBooking);
                                 if ($objHotelBookingDetail->id_customer != $order->id_customer
                                     || OrderReturn::getOrdersReturnDetail($order->id, 0, $idHtlBooking)
+                                    || $objHotelBookingDetail->id_status != HotelBookingDetail::STATUS_ALLOTED
                                 ) {
                                     $hasError = 1;
                                     break;
@@ -428,7 +429,7 @@ class OrderDetailControllerCore extends FrontController
 
                                     $cartHotelData[$type_key]['date_diff'][$date_join]['is_refunded'] = $data_v['is_refunded'];
 
-                                    $cartHotelData[$type_key]['date_diff'][$date_join]['ids_htl_booking_detail'][] = $data_v['id'];
+                                    $cartHotelData[$type_key]['date_diff'][$date_join]['ids_htl_booking_detail'][$data_v['id']] = $data_v['id_status'];
 
                                     $cartHotelData[$type_key]['date_diff'][$date_join]['extra_demands'] = $objBookingDemand->getRoomTypeBookingExtraDemands(
                                         $id_order,
@@ -635,7 +636,7 @@ class OrderDetailControllerCore extends FrontController
                         'refund_allowed' => (int) $order->isReturnable(),
                         'returns' => OrderReturn::getOrdersReturn($order->id_customer, $order->id),
                         'refundReqBookings' => $refundReqBookings,
-                        'hasCompletelyRefunded' => $order->hasCompletelyRefunded(),
+                        'hasCompletelyRefunded' => $order->hasCompletelyRefunded(0, 1),
                         'refundedAmount' => $refundedAmount,
                         'shop_name' => strval(Configuration::get('PS_SHOP_NAME')),
                         'order' => $order,
