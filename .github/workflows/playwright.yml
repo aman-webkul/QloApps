@@ -1,0 +1,111 @@
+name: Playwright Tests
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+env:
+  FORCE_COLOR: 1
+  WEBSITE_BASE_URL: http://127.0.0.1/QloApps
+  ADMIN_BASE_URL: http://127.0.0.1/QloApps/adminhtl
+
+jobs:
+  admin_playwright_test:
+    runs-on: ${{ matrix.operating-system }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest]
+        php-version: ['7.4.33']
+        node-version: ['22.13.1']
+        shard-index: [1]
+        shard-total: [1]
+
+    name: Playwright Tests | Shard ${{ matrix.shard-index }} of ${{ matrix.shard-total }}
+
+    services:
+      mysql:
+        image: mysql:5.6
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: qloapps
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot" --health-interval=10s --health-timeout=5s --health-retries=5
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Apache and PHP
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y apache2 libapache2-mod-php
+          sudo a2enmod rewrite
+          sudo service apache2 start
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          extensions: curl, fileinfo, gd, intl, mbstring, openssl, pdo, pdo_mysql, tokenizer, zip, dom, simplexml, soap
+          ini-values: post_max_size=128M, upload_max_filesize=128M, max_execution_time=300, memory_limit=512M
+          tools: composer:v2
+
+      - name: Configure Apache
+        run: |
+          sudo rm -rf /var/www/html/QloApps
+          sudo mkdir -p /var/www/html/QloApps
+          sudo cp -r $GITHUB_WORKSPACE/* /var/www/html/QloApps/
+          sudo chown -R www-data:www-data /var/www/html/QloApps
+          sudo chmod -R 755 /var/www/html/QloApps
+          
+      - name: Install QloApps
+        run: |
+          sudo chmod -R 777 /var/www/html/QloApps
+          cd /var/www/html/QloApps/install
+          php index_cli.php \
+              --step=all \
+              --language=en \
+              --timezone=Asia/Kolkata \
+              --domain=127.0.0.1 \
+              --base_uri=/QloApps/ \
+              --db_server=127.0.0.1 \
+              --db_name=qloapps \
+              --db_user=root \
+              --db_password=root \
+              --prefix=qlo_ \
+              --db_clear=1 \
+              --db_create=1 \
+              --email=admin@example.com \
+              --password=admin1234 \
+              --name="QloApps" \
+              --country=in \
+              --firstname=Admin \
+              --lastname=User \
+              --newsletter=0 \
+              --send_email=0
+
+          # Clean up
+          sudo rm -rf /var/www/html/QloApps/install/
+          sudo mv /var/www/html/QloApps/admin /var/www/html/QloApps/adminhtl
+
+      - name: Set Up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install Node.js Dependencies
+        run: npm install
+        working-directory: tests
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+        working-directory: tests
+
+      - name: Run All Playwright Tests
+        run: |
+          npx playwright test --reporter=list --config=./playwright.config.ts --shard=${{ matrix.shard-index }}/${{ matrix.shard-total }}
+        working-directory: tests
