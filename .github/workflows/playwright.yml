@@ -110,7 +110,7 @@ jobs:
         run: |
           npx playwright test playwright-tests/${{ matrix.test-folder }} \
             --reporter=list \
-            --config=./playwright.config.ts
+            --config=./playwright.config.ts \
             --shard=${{ matrix.shard-index }}/${{ matrix.shard-total }}
         working-directory: tests
 
