@@ -1,9 +1,8 @@
 import { test, expect } from '@playwright/test';
 
-const QLOAPPS_URL = process.env.WEBSITE_BASE_URL || 'http://127.0.0.1/QloApps';
+const QLOAPPS_URL = process.env.WEBSITE_BASE_URL || 'http://127.0.0.1/QloApps_play';
 
 test('Home Page Check', async ({ page }) => {
-  console.log('Navigating to:', QLOAPPS_URL);
   await page.goto(QLOAPPS_URL);
 
   await expect(page).toHaveTitle(/Hotel Prime/);
@@ -18,3 +17,4 @@ test('Sign In Page', async ({ page }) => {
   // Verify that it is an Authentication Page
   await expect(page.getByRole('heading', { name: 'Authentication' })).toBeVisible();
 });
+

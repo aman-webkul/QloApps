@@ -22,6 +22,7 @@ jobs:
         node-version: ['22.13.1']
         shard-index: [1]
         shard-total: [1]
+        test-folder: [admin, website]
 
     name: Playwright Tests | Shard ${{ matrix.shard-index }} of ${{ matrix.shard-total }}
 
@@ -105,7 +106,18 @@ jobs:
         run: npx playwright install --with-deps chromium
         working-directory: tests
 
-      - name: Run All Playwright Tests
+      - name: Run Playwright Tests - ${{ matrix.test-folder }}
         run: |
-          npx playwright test --reporter=list --config=./playwright.config.ts --shard=${{ matrix.shard-index }}/${{ matrix.shard-total }}
+          npx playwright test playwright-tests/${{ matrix.test-folder }} \
+            --reporter=list \
+            --config=./playwright.config.ts
+            --shard=${{ matrix.shard-index }}/${{ matrix.shard-total }}
         working-directory: tests
+
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-html-report-${{ github.run_number }}
+          path: tests/test-results/
+          retention-days: 7
