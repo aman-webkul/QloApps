@@ -130,6 +130,9 @@ jobs:
 
       - name: Restore MySQL Database
         run: |
+          apt install net-tools
+          netstat -tulpn 
+          mysql --version 
           # Wait for MySQL to be ready
           for i in {1..30}; do
             if mysqladmin ping -h 127.0.0.1 -uroot -proot --silent; then
