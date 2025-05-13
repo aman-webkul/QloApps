@@ -130,10 +130,6 @@ jobs:
 
       - name: Restore MySQL Database
         run: |
-          #sudo apt install net-tools
-          #netstat -tulpn 
-          mysql --version 
-          ip a
           # Wait for MySQL to be ready
           for i in {1..30}; do
             if mysqladmin ping -h 127.0.0.1 -uroot -proot --silent; then
@@ -187,6 +183,11 @@ jobs:
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps chromium
         working-directory: /var/www/html/QloApps/tests
+
+      - name: Debug Apache Response
+        run: |
+          curl -I http://127.0.0.1/QloApps/index.php
+          curl http://127.0.0.1/QloApps/adminhtl
 
       - name: Run Playwright Tests - ${{ matrix.test-folder }}
         run: |
