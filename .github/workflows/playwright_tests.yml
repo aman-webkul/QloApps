@@ -82,6 +82,18 @@ jobs:
           sudo rm -rf /var/www/html/QloApps/install/
           sudo mv /var/www/html/QloApps/admin /var/www/html/QloApps/adminhtl
 
+      - name: Export MySQL Database
+        run: |
+          mysqldump -u root -proot qloapps > /tmp/qloapps_backup.sql
+        continue-on-error: true
+
+      - name: Upload Database Backup
+        uses: actions/upload-artifact@v4
+        with:
+          name: qloapps-db-backup
+          path: /tmp/qloapps_backup.sql
+          retention-days: 1
+
       - name: Upload QloApps Installation
         uses: actions/upload-artifact@v4
         with:
@@ -110,6 +122,24 @@ jobs:
         options: --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot" --health-interval=10s --health-timeout=5s --health-retries=5
 
     steps:
+      - name: Download Database Backup
+        uses: actions/download-artifact@v4
+        with:
+          name: qloapps-db-backup
+          path: /tmp
+
+      - name: Restore MySQL Database
+        run: |
+          # Wait for MySQL to be ready
+          for i in {1..30}; do
+            if mysqladmin ping -h 127.0.0.1 -uroot -proot --silent; then
+              break
+            fi
+            echo "Waiting for MySQL..."
+            sleep 5
+          done
+          mysql -u root -proot qloapps < /tmp/qloapps_backup.sql
+
       - name: Download QloApps Installation
         uses: actions/download-artifact@v4
         with:
