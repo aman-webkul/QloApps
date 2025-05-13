@@ -11,7 +11,7 @@ env:
   ADMIN_BASE_URL: http://127.0.0.1/QloApps/adminhtl
 
 jobs:
-  admin_playwright_test:
+  playwright_test:
     runs-on: ${{ matrix.operating-system }}
 
     strategy:
@@ -20,11 +20,11 @@ jobs:
         operating-system: [ubuntu-latest]
         php-version: ['7.4.33']
         node-version: ['22.13.1']
-        shard-index: [1]
-        shard-total: [1]
+        # shard-index: [1]
+        # shard-total: [1]
         test-folder: [admin, website]
 
-    name: Playwright Tests | Shard ${{ matrix.shard-index }} of ${{ matrix.shard-total }}
+    name: Playwright Tests | ${{ matrix.test-folder }}
 
     services:
       mysql:
@@ -110,14 +110,13 @@ jobs:
         run: |
           npx playwright test playwright-tests/${{ matrix.test-folder }} \
             --reporter=list \
-            --config=./playwright.config.ts \
-            --shard=${{ matrix.shard-index }}/${{ matrix.shard-total }}
+            --config=./playwright.config.ts
         working-directory: tests
 
       - name: Upload Test Results
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: playwright-html-report-${{ github.run_number }}
+          name: playwright-html-report-${{ matrix.test-folder }}-${{ github.run_number }}
           path: tests/test-results/
           retention-days: 7
