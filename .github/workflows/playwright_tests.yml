@@ -1,4 +1,4 @@
-name: QloApps Installation
+name: Playwright Tests
 
 on: [push, pull_request]
 
@@ -88,3 +88,81 @@ jobs:
           name: qloapps-installation
           path: /var/www/html/QloApps
           retention-days: 1
+    
+  run_tests:
+    needs: setup_qloapps
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        test-folder: [admin, website]
+        node-version: ['22.13.1']
+
+    name: Run Playwright Tests - ${{ matrix.test-folder }}
+
+    services:
+      mysql:
+        image: mysql:5.6
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: qloapps
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot" --health-interval=10s --health-timeout=5s --health-retries=5
+
+    steps:
+      - name: Download QloApps Installation
+        uses: actions/download-artifact@v4
+        with:
+          name: qloapps-installation
+          path: ./qloapps-tmp
+
+      - name: Setup Apache and PHP
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y apache2 libapache2-mod-php
+          sudo a2enmod rewrite
+          sudo service apache2 start
+  
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 7.4.33
+          extensions: curl, fileinfo, gd, intl, mbstring, openssl, pdo, pdo_mysql, tokenizer, zip, dom, simplexml, soap
+          ini-values: post_max_size=128M, upload_max_filesize=128M, max_execution_time=300, memory_limit=512M
+          tools: composer:v2
+  
+      - name: Restore QloApps to Apache Directory
+        run: |
+          sudo rm -rf /var/www/html/QloApps
+          sudo mkdir -p /var/www/html/QloApps
+          sudo mv ./qloapps-tmp /var/www/html/QloApps
+          sudo chown -R www-data:www-data /var/www/html/QloApps
+          sudo chmod -R 755 /var/www/html/QloApps
+
+      - name: Set Up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install Node.js Dependencies
+        run: npm install
+        working-directory: tests
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+        working-directory: tests
+
+      - name: Run Playwright Tests - ${{ matrix.test-folder }}
+        run: |
+          npx playwright test playwright-tests/${{ matrix.test-folder }} \
+            --reporter=list \
+            --config=./playwright.config.ts
+        working-directory: tests
+
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-html-report-${{ github.run_number }}
+          path: tests/test-results/
+          retention-days: 7
