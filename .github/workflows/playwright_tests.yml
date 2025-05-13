@@ -26,17 +26,9 @@ jobs:
         options: --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot" --health-interval=10s --health-timeout=5s --health-retries=5
 
     steps:
-      - name: checked files
-        run: |
-          pwd
-          ls
       - name: Checkout Code
         uses: actions/checkout@v4
         
-      - name: checked files 2
-        run: |
-          pwd
-          ls
       - name: Setup Apache and PHP
         run: |
           sudo apt-get update
@@ -139,29 +131,14 @@ jobs:
           ini-values: post_max_size=128M, upload_max_filesize=128M, max_execution_time=300, memory_limit=512M
           tools: composer:v2
 
-      - name: checked files
-        run: |
-          pwd
-          ls
-          cd qloapps-tmp
-          ls
-
-
       - name: Restore QloApps to Apache Directory
         run: |
           sudo rm -rf /var/www/html/QloApps
           sudo mkdir -p /var/www/html/QloApps
           sudo mv ./qloapps-tmp/* /var/www/html/QloApps
-          cd /var/www/html/QloApps/
-          ls
-          pwd
           sudo chown -R www-data:www-data /var/www/html/QloApps
           sudo chmod -R 755 /var/www/html/QloApps
-
-      - name: checked files 2
-        run: |
-          pwd
-          ls
+          sudo chmod -R 777 /var/www/html/QloApps
 
       - name: Set Up Node.js
         uses: actions/setup-node@v4
