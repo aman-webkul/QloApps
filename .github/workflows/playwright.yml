@@ -15,6 +15,16 @@ jobs:
     runs-on: ubuntu-latest
     name: Setup QloApps
 
+    services:
+      mysql:
+        image: mysql:5.6
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: qloapps
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot" --health-interval=10s --health-timeout=5s --health-retries=5
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -88,6 +98,16 @@ jobs:
         node-version: ['22.13.1']
 
     name: Run Playwright Tests - ${{ matrix.test-folder }}
+
+    services:
+      mysql:
+        image: mysql:5.6
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: qloapps
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot" --health-interval=10s --health-timeout=5s --health-retries=5
 
     steps:
       - name: Download QloApps Installation
