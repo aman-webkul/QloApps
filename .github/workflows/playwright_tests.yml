@@ -84,7 +84,7 @@ jobs:
 
       - name: Export MySQL Database
         run: |
-          mysqldump -u root -proot qloapps > /tmp/qloapps_backup.sql
+          mysqldump -h 127.0.0.1  -uroot -proot qloapps > /tmp/qloapps_backup.sql
         continue-on-error: true
 
       - name: Upload Database Backup
