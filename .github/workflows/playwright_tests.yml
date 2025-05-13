@@ -131,15 +131,15 @@ jobs:
           ini-values: post_max_size=128M, upload_max_filesize=128M, max_execution_time=300, memory_limit=512M
           tools: composer:v2
   
-      - name: checked files
-        run: |
-          cd /var/www/html/QloApps
-          ls
+      # - name: checked files
+      #   run: |
+      #     cd /var/www/html/QloApps
+      #     ls
 
       - name: checked files
         run: |
           pwd
-          
+
 
       - name: Restore QloApps to Apache Directory
         run: |
