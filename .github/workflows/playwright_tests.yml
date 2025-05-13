@@ -184,11 +184,6 @@ jobs:
         run: npx playwright install --with-deps chromium
         working-directory: /var/www/html/QloApps/tests
 
-      - name: Debug Apache Response
-        run: |
-          curl -I http://127.0.0.1/QloApps/index.php
-          curl http://127.0.0.1/QloApps/adminhtl
-
       - name: Run Playwright Tests - ${{ matrix.test-folder }}
         run: |
           npx playwright test playwright-tests/${{ matrix.test-folder }} \
