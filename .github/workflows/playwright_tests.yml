@@ -133,6 +133,7 @@ jobs:
           #sudo apt install net-tools
           #netstat -tulpn 
           mysql --version 
+          ip a
           # Wait for MySQL to be ready
           for i in {1..30}; do
             if mysqladmin ping -h 127.0.0.1 -uroot -proot --silent; then
@@ -141,7 +142,7 @@ jobs:
             echo "Waiting for MySQL..."
             sleep 5
           done
-          mysql -u root -proot qloapps < /tmp/qloapps_backup.sql
+          mysql -h 127.0.0.1 -uroot -proot qloapps < /tmp/qloapps_backup.sql
 
       - name: Download QloApps Installation
         uses: actions/download-artifact@v4
