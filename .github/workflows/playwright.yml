@@ -115,6 +115,21 @@ jobs:
         with:
           name: qloapps-installation
 
+      - name: Start Apache Server
+        run: |
+          sudo service apache2 start
+          sudo service apache2 reload  # Reload in case it was already started in the setup job
+          sleep 5  # Wait for Apache to fully load
+
+      - name: Debug Apache Response
+        run: |
+          curl -I http://localhost/
+
+          curl -I http://127.0.0.1/QloApps/index.php
+          curl http://127.0.0.1/QloApps/index.php
+  
+          
+
       - name: Set Up Node.js
         uses: actions/setup-node@v4
         with:
