@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
 
+const QLOAPPS_ADMIN_URL = process.env.ADMIN_BASE_URL || 'http://127.0.0.1/QloApps/adminhtl';
+
 const adminCredentials = {
     email: "admin@example.com",
     password: "admin1234",
@@ -7,7 +9,7 @@ const adminCredentials = {
 
 test('Admin login and logout flow', async ({ page }) => {
     // Go to the admin login page (relative to baseURL if set)
-    await page.goto('/adminhtl/');
+    await page.goto(QLOAPPS_ADMIN_URL);
 
     // Verify that it is an Authentication Page
     await expect(page).toHaveTitle(/Administration panel/i);
