@@ -990,6 +990,8 @@ abstract class PaymentModuleCore extends Module
                                         $objServiceProductOrderDetail->id_order_detail = $idOrderDetail;
                                         $objServiceProductOrderDetail->id_cart = $this->context->cart->id;
                                         $objServiceProductOrderDetail->id_htl_booking_detail = $roomBookingDetail['id'];
+                                        // $objServiceProductOrderDetail->tax_computation_method = $roomTypeService['tax_computation_method'];
+                                        // $objServiceProductOrderDetail->id_tax_rules_group = $roomTypeService['id_tax_rules_group'];
                                         $objServiceProductOrderDetail->unit_price_tax_excl = $roomTypeService['unit_price_tax_excl'];
                                         $objServiceProductOrderDetail->unit_price_tax_incl = $roomTypeService['unit_price_tax_incl'];
                                         $objServiceProductOrderDetail->total_price_tax_excl = $roomTypeService['total_price_tax_excl'];
@@ -1017,6 +1019,8 @@ abstract class PaymentModuleCore extends Module
                                         $objServiceProductOrderDetail->id_order = $order->id;
                                         $objServiceProductOrderDetail->id_order_detail = $idOrderDetail;
                                         $objServiceProductOrderDetail->id_cart = $this->context->cart->id;
+                                        // $objServiceProductOrderDetail->tax_computation_method = $hotelProduct['tax_computation_method'];
+                                        // $objServiceProductOrderDetail->id_tax_rules_group = $hotelProduct['id_tax_rules_group'];
                                         $objServiceProductOrderDetail->unit_price_tax_excl = $hotelProduct['unit_price_tax_excl'];
                                         $objServiceProductOrderDetail->unit_price_tax_incl = $hotelProduct['unit_price_tax_incl'];
                                         $objServiceProductOrderDetail->total_price_tax_excl = $hotelProduct['total_price_tax_excl'];
@@ -1051,6 +1055,8 @@ abstract class PaymentModuleCore extends Module
                                         $objServiceProductOrderDetail->id_order = $order->id;
                                         $objServiceProductOrderDetail->id_order_detail = $idOrderDetail;
                                         $objServiceProductOrderDetail->id_cart = $this->context->cart->id;
+                                        // $objServiceProductOrderDetail->tax_computation_method = $standaloneProduct['tax_computation_method'];
+                                        // $objServiceProductOrderDetail->id_tax_rules_group = $standaloneProduct['id_tax_rules_group'];
                                         $objServiceProductOrderDetail->unit_price_tax_excl = $standaloneProduct['unit_price_tax_excl'];
                                         $objServiceProductOrderDetail->unit_price_tax_incl = $standaloneProduct['unit_price_tax_incl'];
                                         $objServiceProductOrderDetail->total_price_tax_excl = $standaloneProduct['total_price_tax_excl'];
@@ -1089,6 +1095,8 @@ abstract class PaymentModuleCore extends Module
                                         $objServiceProductOrderDetail->id_order = $order->id;
                                         $objServiceProductOrderDetail->id_order_detail = $idOrderDetail;
                                         $objServiceProductOrderDetail->id_cart = $this->context->cart->id;
+                                        // $objServiceProductOrderDetail->tax_computation_method = $serviceProduct['tax_computation_method'];
+                                        // $objServiceProductOrderDetail->id_tax_rules_group = $serviceProduct['id_tax_rules_group'];
                                         $objServiceProductOrderDetail->unit_price_tax_excl = $serviceProduct['unit_price_tax_excl'];
                                         $objServiceProductOrderDetail->unit_price_tax_incl = $serviceProduct['unit_price_tax_incl'];
                                         $objServiceProductOrderDetail->total_price_tax_excl = $serviceProduct['total_price_tax_excl'];
@@ -1572,7 +1580,7 @@ abstract class PaymentModuleCore extends Module
                         }
                     }
 
-                    $order->updateOrderDetailTax();
+                    // $order->updateOrderDetailTax();
                 } else {
                     $error = Tools::displayError('Order creation failed');
                     PrestaShopLogger::addLog($error, 4, '0000002', 'Cart', intval($order->id_cart));

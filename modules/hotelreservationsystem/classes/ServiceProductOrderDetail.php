@@ -28,6 +28,8 @@ class ServiceProductOrderDetail extends ObjectModel
     public $id_hotel;
     public $id_htl_booking_detail;
     public $id_product_option;
+    // public $tax_computation_method;
+    // public $id_tax_rules_group;
     public $unit_price_tax_excl;
     public $unit_price_tax_incl;
     public $total_price_tax_excl;
@@ -53,6 +55,8 @@ class ServiceProductOrderDetail extends ObjectModel
             'id_hotel' => array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId'),
             'id_htl_booking_detail' => array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId'),
             'id_product_option' => array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId'),
+            // 'tax_computation_method' => array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId'),
+            // 'id_tax_rules_group' => array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId'),
             'unit_price_tax_excl' => array('type' => self::TYPE_FLOAT, 'validate' => 'isPrice', 'required' => true),
             'unit_price_tax_incl' => array('type' => self::TYPE_FLOAT, 'validate' => 'isPrice', 'required' => true),
             'total_price_tax_excl' => array('type' => self::TYPE_FLOAT, 'validate' => 'isPrice', 'required' => true),
@@ -143,14 +147,13 @@ class ServiceProductOrderDetail extends ObjectModel
         $sql = 'SELECT spod.*';
         if (!$getTotalPrice) {
             $sql .= ', hbd.`id_product` as `id_room_type`, od.`product_price_calculation_method`,
-            hbd.`id_room`, hbd.`adults`, hbd.`children`, hbd.`date_from`, hbd.`date_to`, hbd.`room_type_name`, p.`max_quantity`,
+            hbd.`id_room`, hbd.`adults`, hbd.`children`, hbd.`date_from`, hbd.`date_to`, hbd.`room_type_name`,
             spod.`id_product` as id_product,  od.`product_allow_multiple_quantity`, od.`product_price_calculation_method`, od.`product_auto_add`, od.`product_price_addition_type`';
         }
         $sql .= ' FROM `'._DB_PREFIX_.'htl_booking_detail` hbd
             LEFT JOIN `'._DB_PREFIX_.'service_product_order_detail` spod ON(spod.`id_htl_booking_detail` = hbd.`id`)';
 
         $sql .= ' LEFT JOIN `'._DB_PREFIX_.'order_detail` od ON(od.`id_order_detail` = spod.`id_order_detail`)';
-        $sql .= ' LEFT JOIN `'._DB_PREFIX_.'product` p ON(spod.`id_product` = p.`id_product`)';
         $sql .= ' WHERE spod.`id_htl_booking_detail` IS NOT NULL';
 
         if ($idOrder) {
@@ -230,7 +233,6 @@ class ServiceProductOrderDetail extends ObjectModel
                             'unit_price_tax_incl' => $product['unit_price_tax_incl'],
                             'product_auto_add' => $product['product_auto_add'],
                             'product_price_addition_type' => $product['product_price_addition_type'],
-                            'max_quantity' => (int) $product['max_quantity']
                         );
                     } else {
                         $selectedAdditionalServices[$product['id_htl_booking_detail']]['id_order'] = $product['id_order'];
@@ -263,7 +265,6 @@ class ServiceProductOrderDetail extends ObjectModel
                                 'unit_price_tax_incl' => $product['unit_price_tax_incl'],
                                 'product_auto_add' => $product['product_auto_add'],
                                 'product_price_addition_type' => $product['product_price_addition_type'],
-                                'max_quantity' => (int) $product['max_quantity']
                             ),
                         );
                     }

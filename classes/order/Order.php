@@ -2519,10 +2519,9 @@ class OrderCore extends ObjectModel
         $expected_total_tax = (float)$this->getTotalProductsWithTaxes($limitToOrderDetails) - (float)$this->getTotalProductsWithoutTaxes($limitToOrderDetails);
 
         $order_ecotax_tax = 0;
-
-        $tax_rates = array();
-
+        
         foreach ($order_details as $order_detail) {
+            $tax_rates = array();
             $id_order_detail = $order_detail['id_order_detail'];
             $tax_calculator = OrderDetail::getTaxCalculatorStatic($id_order_detail);
 
@@ -2550,47 +2549,111 @@ class OrderCore extends ObjectModel
             foreach ($tax_calculator->taxes as $tax) {
                 $tax_rates[$tax->id] = $tax->rate;
             }
-            foreach ($tax_calculator->getTaxesAmount($discounted_price_tax_excl) as $id_tax => $unit_amount) {
+
+            if ($taxesList = OrderDetail::getTaxListStatic($id_order_detail)) {
                 $total_tax_base = 0;
                 $total_tax_base = Tools::processPriceRounding($discounted_price_tax_excl, $quantity);
-                $total_amount = Tools::processPriceRounding($unit_amount, $quantity);
+                // $total_amount = Tools::processPriceRounding($unit_amount, $quantity);
 
-                if (!isset($breakdown[$id_tax])) {
-                    $breakdown[$id_tax] = array('tax_base' => 0, 'tax_amount' => 0);
+                if (Product::isBookingProduct($order_detail['product_id'])) {
+                    $objServiceProductOrderDetail = new ServiceProductOrderDetail();
+                    $autoAddedServiceWithRoomTaxExcl = $objServiceProductOrderDetail->getRoomTypeServiceProducts(
+                        $order_detail['id_order'],
+                        0,0,
+                        $order_detail['product_id'],
+                        0,
+                        0,
+                        0,
+                        true, // TotalPrice
+                        false,
+                        true,
+                        Product::PRICE_ADDITION_TYPE_WITH_ROOM
+                    );
+                    $autoAddedServiceWithRoomTaxIncl = $objServiceProductOrderDetail->getRoomTypeServiceProducts(
+                        $order_detail['id_order'],
+                        0,0,
+                        $order_detail['product_id'],
+                        0,
+                        0,
+                        0,
+                        true, // TotalPrice
+                        true,
+                        true,
+                        Product::PRICE_ADDITION_TYPE_WITH_ROOM
+                    );
+
+                    $totalTaxAutoAddedServiceWithRoom = $autoAddedServiceWithRoomTaxIncl - $autoAddedServiceWithRoomTaxExcl;
+                } else {
+                    $autoAddedServiceWithRoomTaxExcl = 0;
+                    $autoAddedServiceWithRoomTaxIncl = 0;
+                    $totalTaxAutoAddedServiceWithRoom = $autoAddedServiceWithRoomTaxIncl - $autoAddedServiceWithRoomTaxExcl;
                 }
 
-                $breakdown[$id_tax]['tax_base'] += $total_tax_base;
-                $breakdown[$id_tax]['tax_amount'] += $total_amount;
+                $total_tax_base = ($total_tax_base + $autoAddedServiceWithRoomTaxExcl) / count($tax_rates);
+                foreach ($taxesList as $detailTax) {
+                    // if (!isset($breakdown[$id_tax])) {
+                    //     $breakdown[$id_tax] = array('tax_base' => 0, 'tax_amount' => 0);
+                    // }
+                    $unitAmount = $detailTax['unit_amount'] + ($totalTaxAutoAddedServiceWithRoom / count($tax_rates));
+                    $totalAmount = $detailTax['total_amount'] + ($totalTaxAutoAddedServiceWithRoom / count($tax_rates));
 
-                $order_detail_tax_rows[] = array(
-                    'id_order_detail' => $id_order_detail,
-                    'id_tax' => $id_tax,
-                    'tax_rate' => $tax_rates[$id_tax],
-                    'unit_tax_base' => $discounted_price_tax_excl,
-                    'total_tax_base' => $total_tax_base,
-                    'unit_amount' => $unit_amount,
-                    'total_amount' => $total_amount
-                );
+                    // $breakdown[$id_tax]['tax_base'] += $total_tax_base;
+                    // $breakdown[$id_tax]['tax_amount'] += $totalAmount;
+
+                    $order_detail_tax_rows[] = array(
+                        'id_order_detail' => $id_order_detail,
+                        'id_tax' => $detailTax['id_tax'],
+                        'tax_rate' => $tax_rates[$detailTax['id_tax']],
+                        'unit_tax_base' => $discounted_price_tax_excl,
+                        'total_tax_base' => $total_tax_base,
+                        'unit_amount' => $unitAmount,
+                        'total_amount' => $totalAmount
+                    );
+                }
             }
+
+            // foreach ($tax_calculator->getTaxesAmount($discounted_price_tax_excl) as $id_tax => $unit_amount) {
+            //     $total_tax_base = 0;
+            //     $total_tax_base = Tools::processPriceRounding($discounted_price_tax_excl, $quantity);
+            //     $total_amount = Tools::processPriceRounding($unit_amount, $quantity);
+
+            //     if (!isset($breakdown[$id_tax])) {
+            //         $breakdown[$id_tax] = array('tax_base' => 0, 'tax_amount' => 0);
+            //     }
+
+            //     $breakdown[$id_tax]['tax_base'] += $total_tax_base;
+            //     $breakdown[$id_tax]['tax_amount'] += $total_amount;
+
+            //     $order_detail_tax_rows[] = array(
+            //         'id_order_detail' => $id_order_detail,
+            //         'id_tax' => $id_tax,
+            //         'tax_rate' => $tax_rates[$id_tax],
+            //         'unit_tax_base' => $discounted_price_tax_excl,
+            //         'total_tax_base' => $total_tax_base,
+            //         'unit_amount' => $unit_amount,
+            //         'total_amount' => $total_amount
+            //     );
+            // }
         }
-        if (!empty($order_detail_tax_rows)) {
-            foreach ($breakdown as $data) {
-                $actual_total_tax += Tools::ps_round($data['tax_amount'], _PS_PRICE_COMPUTE_PRECISION_, $this->round_mode);
-                $actual_total_base += Tools::ps_round($data['tax_base'], _PS_PRICE_COMPUTE_PRECISION_, $this->round_mode);
-            }
 
-            $order_ecotax_tax = Tools::ps_round($order_ecotax_tax, _PS_PRICE_COMPUTE_PRECISION_, $this->round_mode);
+        // if (!empty($order_detail_tax_rows)) {
+        //     foreach ($breakdown as $data) {
+        //         $actual_total_tax += Tools::ps_round($data['tax_amount'], _PS_PRICE_COMPUTE_PRECISION_, $this->round_mode);
+        //         $actual_total_base += Tools::ps_round($data['tax_base'], _PS_PRICE_COMPUTE_PRECISION_, $this->round_mode);
+        //     }
 
-            $tax_rounding_error = $expected_total_tax - $actual_total_tax - $order_ecotax_tax;
-            if ($tax_rounding_error != 0) {
-                Tools::spreadAmount($tax_rounding_error, _PS_PRICE_COMPUTE_PRECISION_, $order_detail_tax_rows, 'total_amount');
-            }
+        //     $order_ecotax_tax = Tools::ps_round($order_ecotax_tax, _PS_PRICE_COMPUTE_PRECISION_, $this->round_mode);
 
-            $base_rounding_error = $expected_total_base - $actual_total_base;
-            if ($base_rounding_error != 0) {
-                Tools::spreadAmount($base_rounding_error, _PS_PRICE_COMPUTE_PRECISION_, $order_detail_tax_rows, 'total_tax_base');
-            }
-        }
+        //     $tax_rounding_error = $expected_total_tax - $actual_total_tax - $order_ecotax_tax;
+        //     if ($tax_rounding_error != 0) {
+        //         Tools::spreadAmount($tax_rounding_error, _PS_PRICE_COMPUTE_PRECISION_, $order_detail_tax_rows, 'total_amount');
+        //     }
+
+        //     $base_rounding_error = $expected_total_base - $actual_total_base;
+        //     if ($base_rounding_error != 0) {
+        //         Tools::spreadAmount($base_rounding_error, _PS_PRICE_COMPUTE_PRECISION_, $order_detail_tax_rows, 'total_tax_base');
+        //     }
+        // }
 
         return $order_detail_tax_rows;
     }
@@ -2658,36 +2721,25 @@ class OrderCore extends ObjectModel
      *
      * @return boolean: true if order has been completely refunded as per requested parameters or false
      */
-    public function hasCompletelyRefunded($action = 0, $includeCheckIn = 0, $mustHaveRoomsOrProducts = 1)
+    public function hasCompletelyRefunded($action = 0, $includeCheckIn = 0)
     {
         $res = true;
-
-        // Check if order has bookings or products for refund
-        if ($mustHaveRoomsOrProducts) {
-            $hasRoomsOrProducts = 0;
-        } else {
-            $hasRoomsOrProducts = 1;
-        }
-
         // check rooms in booking
         $objHotelBooking = new HotelBookingdetail();
         if ($orderBookings = $objHotelBooking->getOrderCurrentDataByOrderId($this->id)) {
             $res &= $this->checkList($orderBookings, $action, $includeCheckIn);
-            $hasRoomsOrProducts = 1;
         }
         // check hotel linked products
         $objServiceProductOrderDetail = new ServiceProductOrderDetail();
         if ($hotelProducts = $objServiceProductOrderDetail->getServiceProductsInOrder($this->id, 0, 0, Product::SELLING_PREFERENCE_HOTEL_STANDALONE)) {
             $res &= $this->checkList($hotelProducts, $action, false);
-            $hasRoomsOrProducts = 1;
         }
 
         if ($standaloneProducts = $objServiceProductOrderDetail->getServiceProductsInOrder($this->id, 0, 0, Product::SELLING_PREFERENCE_STANDALONE)) {
             $res &= $this->checkList($standaloneProducts, $action, false);
-            $hasRoomsOrProducts = 1;
         }
 
-        return ($hasRoomsOrProducts && $res);
+        return $res;
     }
 
     public function checkList($list, $action = 0, $includeCheckIn = 0) {
@@ -2811,7 +2863,7 @@ class OrderCore extends ObjectModel
             ) {
                 $result['errors'][] = Tools::displayError('Order status can not be set to Refunded until all bookings in the order are completely refunded.');
             } elseif ($objNewOrderState->id == Configuration::get('PS_OS_CANCELED')
-                && !$this->hasCompletelyRefunded(Order::ORDER_COMPLETE_CANCELLATION_FLAG, 0, 1)
+                && !$this->hasCompletelyRefunded(Order::ORDER_COMPLETE_CANCELLATION_FLAG)
             ) {
                 $result['errors'][] = Tools::displayError('Order status can not be set to Cancelled until all bookings in the order are cancelled.');
             } elseif ($objCurrentOrderState->id == Configuration::get('PS_OS_ERROR') && !($objNewOrderState->id == Configuration::get('PS_OS_ERROR'))) {

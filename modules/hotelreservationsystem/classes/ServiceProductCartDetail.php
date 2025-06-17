@@ -166,6 +166,7 @@ class ServiceProductCartDetail extends ObjectModel
             $language = new Language($idLang);
         }
 
+        // , hrtspp.`id_tax_rules_group`, IFNULL(tr.`behavior`, 0) as tax_computation_method
         $sql = 'SELECT spc.*, p.`selling_preference_type`, hcbd.`date_from`, spc.`id_cart` as service_id_cart, hcbd.`date_to`, p.`price_calculation_method`, hcbd.`id_product` as `id_product_room_type`';
         if (!$getTotalPrice) {
             $sql .= ', hbil.`hotel_name`, p.`auto_add_to_cart`, p.`price_addition_type` ';
@@ -174,6 +175,8 @@ class ServiceProductCartDetail extends ObjectModel
         $sql .= ' LEFT JOIN `'._DB_PREFIX_.'product` p ON (p.`id_product` = spc.`id_product`)';
 
         $sql .= ' LEFT JOIN `'._DB_PREFIX_.'htl_cart_booking_data` hcbd ON (hcbd.`id` = spc.`htl_cart_booking_id`)';
+        // $sql .= ' LEFT JOIN `'._DB_PREFIX_.'htl_room_type_service_product_price` hrtspp ON (hrtspp.`id_element` = hcbd.`id_product` AND hrtspp.`id_product` = spc.`id_product`)';
+        // $sql .= ' LEFT JOIN `'._DB_PREFIX_.'tax_rule` tr ON (hrtspp.`id_tax_rules_group` = tr.`id_tax_rules_group`)';
 
         if (!$getTotalPrice) {
             $sql .= ' LEFT JOIN `'._DB_PREFIX_.'htl_branch_info_lang` hbil ON (hbil.`id` = spc.`id_hotel` AND hbil.`id_lang` = '. $language->id.')';
@@ -313,6 +316,8 @@ class ServiceProductCartDetail extends ObjectModel
                             'auto_add_to_cart' => $product['auto_add_to_cart'],
                             'price_addition_type' => $product['price_addition_type'],
                             'total_price' => ($useTax ? $priceTaxIncl * (int)$product['quantity'] * $numDays : $priceTaxExcl * (int)$product['quantity'] * $numDays),
+                            // 'id_tax_rules_group' => $product['id_tax_rules_group'],
+                            // 'tax_computation_method' => $product['tax_computation_method']
                         );
 
                         if ($product['htl_cart_booking_id']) {
@@ -477,7 +482,7 @@ class ServiceProductCartDetail extends ObjectModel
                 if ($quantity) {
                     $removedQuantity = $quantity;
                     $objServiceProductCartDetail->quantity -= $quantity;
-                    if ($objServiceProductCartDetail->quantity > 0) {
+                    if ($objServiceProductCartDetail->quantity > 1) {
                         $updateQunatity = $objServiceProductCartDetail->save();
                     } else {
                         $updateQunatity = $objServiceProductCartDetail->delete();
